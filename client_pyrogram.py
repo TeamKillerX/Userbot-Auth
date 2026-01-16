@@ -3,7 +3,7 @@
 # NEW: https://ubt.ryzenths.dpdns.org/api/v1 (opsional)
 
 import os, time, hmac, hashlib, secrets
-import aiohttp, logging
+import aiohttp, logging, asyncio
 from pyrogram import Client
 
 API_ID = 0
@@ -214,7 +214,7 @@ class UserAuth(Client):
         
     async def stop(self, *args, **kwargs):
         await super().stop()
-        self.logger.info("RyzenthUser stopped")
+        self.logger.info("Userbot-Auth stopped")
         self.logger.info("Goodbye!")
         await asyncio.sleep(1)
 
