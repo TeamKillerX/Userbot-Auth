@@ -53,7 +53,7 @@ class UserbotAuth:
     }
     k = self._load_api_key()
     if k:
-      h["X-UBT-KEY"] = k
+      h["X-UBT-API-KEY"] = k
     return h
 
   async def _post(self, path: str, json: Dict[str, Any], headers: Dict[str, str] | None = None):
@@ -107,6 +107,19 @@ class UserbotAuth:
 
   async def health(self, user_id: int) -> Dict[str, Any]:
     status, data = await self._get("/api/v1/create/health-ubt")
+    return {"http": status, "data": data}
+
+  async def runtime_post(api: str, user_id: int, payload: dict):
+    api_key = self._load_api_key()
+    status, data = await self._post(
+      f"/api/v1/{api}",
+      json=payload,
+      headers={
+        "X-UBT-USER-ID": str(user_id),
+        "X-UBT-API-KEY": str(api_key),
+        "Content-Type": "application/json"
+      }
+    )
     return {"http": status, "data": data}
   
   async def log_update(
