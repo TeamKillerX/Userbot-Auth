@@ -111,6 +111,8 @@ class UserbotAuth:
 
   async def runtime_post(api: str, user_id: int, payload: dict):
     api_key = self._load_api_key()
+    if not api_key:
+      raise RuntimeError("NO_CREATE_FILE_API_KEY")
     status, data = await self._post(
       f"/api/v1/{api}",
       json=payload,
