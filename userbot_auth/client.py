@@ -121,7 +121,7 @@ class UserbotAuth:
       }
     )
     return {"http": status, "data": data}
-  
+
   async def log_update(
     self,
     user_id: int,
