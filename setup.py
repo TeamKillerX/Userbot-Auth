@@ -1,6 +1,8 @@
 import os
 import re
+
 import setuptools
+
 
 def read(fname, version=False):
     text = open(

@@ -1,6 +1,13 @@
-import os, time, secrets, hmac, hashlib, aiohttp
+import hashlib
+import hmac
+import os
+import secrets
+import time
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
+import aiohttp
+
 
 @dataclass
 class UBTConfig:
