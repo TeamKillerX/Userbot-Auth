@@ -35,7 +35,9 @@ class UserbotAuth:
                 with open(self.cfg.api_key_file, "r", encoding="utf-8") as f:
                     value = f.read().strip()
                 return value if value else None
-            except Exception:
+            except (OSError, UnicodeDecodeError):
+                if getattr(self.cfg, "strict", False):
+                    raise
                 return None
         return None
 
@@ -44,9 +46,11 @@ class UserbotAuth:
         try:
             with open(self.cfg.api_key_file, "w", encoding="utf-8") as f:
                 f.write(key)
-        except Exception as e:
+        except OSError as e:
             if self.cfg.strict:
                 raise RuntimeError(f"Failed to save API key: {e}")
+            return False
+        return True
 
     def _sign(self, ts: str, user_id: int, nonce: str) -> str:
         message = f"{ts}.{user_id}.{nonce}".encode("utf-8")
