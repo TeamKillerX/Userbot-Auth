@@ -16,7 +16,7 @@ def read(fname, version=False):
 setuptools.setup(
     name="userbot_auth",
     packages=setuptools.find_packages(),
-    version=read("userbot-auth/__version__.py", version=True),
+    version=read("userbot_auth/__version__.py", version=True),
     license="MIT",
     description="Ryzenth UBT | Enterprise Security Framework.",
     long_description=read("README.md"),
@@ -24,7 +24,7 @@ setuptools.setup(
     author="TeamKillerX",
     project_urls={
         "Source": "https://github.com/TeamKillerX/Userbot-Auth/",
-        "Issues": "https://github.com/TeamKillerX/Userbot-Auth/issue",
+        "Issues": "https://github.com/TeamKillerX/Userbot-Auth/issues",
     },
     keywords=[
         "Userbot-Auth-API",
@@ -32,7 +32,6 @@ setuptools.setup(
     ],
     install_requires=[
         "requests",
-        "typing",
         "aiohttp"
     ],
     classifiers=[
