@@ -41,7 +41,7 @@ class UserbotAuth:
                 return None
         return None
 
-    def _save_api_key(self, key: str) -> None:
+    def _save_api_key(self, key: str) -> bool:
         self.cfg.api_key = key
         try:
             with open(self.cfg.api_key_file, "w", encoding="utf-8") as f:
