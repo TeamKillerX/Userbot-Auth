@@ -18,7 +18,6 @@ class UBTConfig:
     api_key_file: str = "ubt_api_key.txt"
     strict: bool = True
 
-
 class UserbotAuth:
     def __init__(self, url: str, secret: str, token: str | None = None,
                  api_key: str | None = None, api_key_file: str = "ubt_api_key.txt",
@@ -63,7 +62,7 @@ class UserbotAuth:
         return signature
 
     def _headers(self, user_id: int) -> Dict[str, str]:
-        timestamp = str(int(time.time()))
+        timestamp = str(int(time.time() * 1000))
         nonce = secrets.token_hex(8)
         signature = self._sign(timestamp, user_id, nonce)
         headers = {
@@ -120,16 +119,14 @@ class UserbotAuth:
         if not api_key:
             raise RuntimeError("UBT provision response missing api_key")
 
-        ff = self._save_api_key(api_key)
-        if not ff:
-            raise RuntimeError("CANNOT_SAVE_API_KEY")
+        self._save_api_key(api_key)
         return {"ok": True, "api_key_saved": True}
 
-    async def check(self, user_id: int) -> Dict[str, Any]:
+    async def check(self, user_id, payload: dict) -> Dict[str, Any]:
         headers = self._headers(user_id)
         status, data = await self._post(
             "/api/v1/create/check-update",
-            json={"user_id": user_id},
+            json=payload,
             headers=headers
         )
         return {"http": status, "data": data}
