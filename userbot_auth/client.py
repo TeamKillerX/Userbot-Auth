@@ -120,9 +120,7 @@ class UserbotAuth:
         if not api_key:
             raise RuntimeError("UBT provision response missing api_key")
 
-        ff = self._save_api_key(api_key)
-        if not ff:
-            raise RuntimeError("CANNOT_SAVE_API_KEY")
+        self._save_api_key(api_key)
         return {"ok": True, "api_key_saved": True}
 
     async def check(self, user_id: int) -> Dict[str, Any]:
