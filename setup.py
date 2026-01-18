@@ -16,9 +16,9 @@ def read(fname, version=False):
 setuptools.setup(
     name="userbot_auth",
     packages=setuptools.find_packages(),
-    version=read("Ryzenth/__version__.py", version=True),
+    version=read("userbot-auth/__version__.py", version=True),
     license="MIT",
-    description="Ryzenth is a flexible Multi-API SDK with built-in support for API key management and database integration.",
+    description="Ryzenth UBT | Enterprise Security Framework.",
     long_description=read("README.md"),
     long_description_content_type="text/markdown",
     author="TeamKillerX",
