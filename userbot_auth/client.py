@@ -109,20 +109,36 @@ class UserbotAuth:
     status, data = await self._get("/api/v1/create/health-ubt")
     return {"http": status, "data": data}
 
-  async def runtime_post(api: str, user_id: int, payload: dict):
+  async def runtime_post(self, api: str, user_id: int, payload: dict):
     api_key = self._load_api_key()
     if not api_key:
       raise RuntimeError("NO_CREATE_FILE_API_KEY")
-    status, data = await self._post(
-      f"/api/v1/{api}",
-      json=payload,
-      headers={
+
+    headers = {
         "X-UBT-USER-ID": str(user_id),
         "X-UBT-API-KEY": str(api_key),
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+    }
+    try:
+      status, data = await self._post(
+        f"/api/v1/{api}",
+        json=payload,
+        headers=headers,
+        timeout=10,
+      )
+    except Exception as e:
+      return {
+        "http": 0,
+        "error": "NETWORK_ERROR",
+        "detail": str(e),
       }
-    )
-    return {"http": status, "data": data}
+    if status == 403 and data.get("status") == "DISCONNECTED":
+      raise RuntimeError("USERBOT_DISCONNECTED_BY_SERVER")
+
+    return {
+      "http": status,
+      "data": data,
+    }
 
   async def log_update(
     self,
