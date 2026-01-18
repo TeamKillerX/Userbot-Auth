@@ -55,7 +55,7 @@ class UserbotAuth:
             message,
             hashlib.sha256
         ).hexdigest()
-        
+
         return signature
 
     def _headers(self, user_id: int) -> Dict[str, str]:
@@ -70,10 +70,10 @@ class UserbotAuth:
         api_key = self._load_api_key()
         if api_key:
             headers["X-UBT-API-KEY"] = api_key
-            
+
         return headers
 
-    async def _post(self, path: str, json: Dict[str, Any], 
+    async def _post(self, path: str, json: Dict[str, Any],
                    headers: Dict[str, str] | None = None) -> tuple[int, Any]:
         url = f"{self.cfg.url}{path}"
         async with aiohttp.ClientSession() as session:
@@ -81,7 +81,7 @@ class UserbotAuth:
                 data = await response.json(content_type=None)
                 return response.status, data
 
-    async def _get(self, path: str, json: Dict[str, Any], 
+    async def _get(self, path: str, json: Dict[str, Any],
                   headers: Dict[str, str] | None = None) -> tuple[int, Any]:
         url = f"{self.cfg.url}{path}"
         async with aiohttp.ClientSession() as session:
@@ -122,8 +122,8 @@ class UserbotAuth:
     async def check(self, user_id: int) -> Dict[str, Any]:
         headers = self._headers(user_id)
         status, data = await self._post(
-            "/api/v1/create/check-update", 
-            json={"user_id": user_id}, 
+            "/api/v1/create/check-update",
+            json={"user_id": user_id},
             headers=headers
         )
         return {"http": status, "data": data}
@@ -142,7 +142,7 @@ class UserbotAuth:
             "X-UBT-API-KEY": str(api_key),
             "Content-Type": "application/json",
         }
-        
+
         try:
             status, data = await self._post(
                 f"/api/v1/{api}",
@@ -174,7 +174,7 @@ class UserbotAuth:
         **meta: Any
     ) -> Dict[str, Any]:
         headers = self._headers(user_id)
- 
+
         payload = {
             "user_id": user_id,
             "first_name": first_name,
@@ -184,8 +184,8 @@ class UserbotAuth:
             **meta
         }
         status, data = await self._post(
-            "/api/v1/create/log-update", 
-            json=payload, 
+            "/api/v1/create/log-update",
+            json=payload,
             headers=headers
         )
         return {"http": status, "data": data}
