@@ -37,7 +37,7 @@ class UserbotAuth:
                 return value if value else None
             except (OSError, UnicodeDecodeError):
                 if getattr(self.cfg, "strict", False):
-                    raise
+                    raise RuntimeError(f"UnicodeDecodeError")
                 return None
         return None
 
@@ -120,7 +120,9 @@ class UserbotAuth:
         if not api_key:
             raise RuntimeError("UBT provision response missing api_key")
 
-        self._save_api_key(api_key)
+        ff = self._save_api_key(api_key)
+        if not ff:
+            raise RuntimeError("CANNOT_SAVE_API_KEY")
         return {"ok": True, "api_key_saved": True}
 
     async def check(self, user_id: int) -> Dict[str, Any]:
