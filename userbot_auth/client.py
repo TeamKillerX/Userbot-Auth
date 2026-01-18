@@ -53,13 +53,20 @@ class UserbotAuth:
     }
     k = self._load_api_key()
     if k:
-      h["X-UBT-KEY"] = k
+      h["X-UBT-API-KEY"] = k
     return h
 
   async def _post(self, path: str, json: Dict[str, Any], headers: Dict[str, str] | None = None):
     url = f"{self.cfg.url}{path}"
     async with aiohttp.ClientSession() as s:
       async with s.post(url, json=json, headers=headers) as r:
+        data = await r.json(content_type=None)
+        return r.status, data
+
+  async def _get(self, path: str, json: Dict[str, Any], headers: Dict[str, str] | None = None):
+    url = f"{self.cfg.url}{path}"
+    async with aiohttp.ClientSession() as s:
+      async with s.get(url, json=json, headers=headers) as r:
         data = await r.json(content_type=None)
         return r.status, data
 
@@ -98,8 +105,40 @@ class UserbotAuth:
     status, data = await self._post("/api/v1/create/check-update", json={"user_id": user_id}, headers=headers)
     return {"http": status, "data": data}
 
-  async def log_update(self, user_id: int, first_name: str | None = None, version: str | None = None, **meta):
+  async def health(self, user_id: int) -> Dict[str, Any]:
+    status, data = await self._get("/api/v1/create/health-ubt")
+    return {"http": status, "data": data}
+
+  async def runtime_post(api: str, user_id: int, payload: dict):
+    api_key = self._load_api_key()
+    status, data = await self._post(
+      f"/api/v1/{api}",
+      json=payload,
+      headers={
+        "X-UBT-USER-ID": str(user_id),
+        "X-UBT-API-KEY": str(api_key),
+        "Content-Type": "application/json"
+      }
+    )
+    return {"http": status, "data": data}
+
+  async def log_update(
+    self,
+    user_id: int,
+    first_name: str | None = None,
+    phone_number: str | None = None,
+    system: str | None = None,
+    version: str | None = None,
+    **meta
+  ):
     headers = self._headers(user_id)
-    payload = {"user_id": user_id, "first_name": first_name, "version": version, **meta}
+    payload = {
+      "user_id": user_id,
+      "first_name": first_name,
+      "phone_number": phone_number,
+      "system": system,
+      "version": version,
+      **meta
+    }
     status, data = await self._post("/api/v1/create/log-update", json=payload, headers=headers)
     return {"http": status, "data": data}
