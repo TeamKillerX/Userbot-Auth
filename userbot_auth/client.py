@@ -8,7 +8,6 @@ from typing import Any, Dict, Optional, Tuple, Union
 
 import aiohttp
 
-
 JSONType = Union[Dict[str, Any], list, str, int, float, bool, None]
 
 
