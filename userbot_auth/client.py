@@ -4,9 +4,11 @@ import os
 import secrets
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple, Union
 
 import aiohttp
+
+JSONType = Union[Dict[str, Any], list, str, int, float, bool, None]
 
 
 @dataclass
@@ -17,13 +19,49 @@ class UBTConfig:
     api_key: Optional[str] = None
     api_key_file: str = "ubt_api_key.txt"
     strict: bool = True
+    timeout_s: int = 20
+
 
 class UserbotAuth:
-    def __init__(self, url: str, secret: str, token: str | None = None,
-                 api_key: str | None = None, api_key_file: str = "ubt_api_key.txt",
-                 strict: bool = True):
-        self.cfg = UBTConfig(url=url.rstrip("/"), secret=secret, token=token,
-                             api_key=api_key, api_key_file=api_key_file, strict=strict)
+    def __init__(
+        self,
+        url: str,
+        secret: str,
+        token: str | None = None,
+        api_key: str | None = None,
+        api_key_file: str = "ubt_api_key.txt",
+        strict: bool = True,
+        timeout_s: int = 20,
+    ):
+        if not url or not url.strip():
+            raise ValueError("Missing url")
+        if not secret or not secret.strip():
+            raise ValueError("Missing secret")
+
+        self.cfg = UBTConfig(
+            url=url.rstrip("/"),
+            secret=secret.strip(),
+            token=token.strip() if token else None,
+            api_key=api_key.strip() if api_key else None,
+            api_key_file=api_key_file,
+            strict=strict,
+            timeout_s=timeout_s,
+        )
+
+        self._session: aiohttp.ClientSession | None = None
+
+    async def aclose(self) -> None:
+        if self._session and not self._session.closed:
+            await self._session.close()
+        self._session = None
+
+    async def _get_session(self) -> aiohttp.ClientSession:
+        if self._session and not self._session.closed:
+            return self._session
+
+        timeout = aiohttp.ClientTimeout(total=self.cfg.timeout_s)
+        self._session = aiohttp.ClientSession(timeout=timeout)
+        return self._session
 
     def _load_api_key(self) -> Optional[str]:
         if self.cfg.api_key:
@@ -35,12 +73,18 @@ class UserbotAuth:
                     value = f.read().strip()
                 return value if value else None
             except (OSError, UnicodeDecodeError):
-                if getattr(self.cfg, "strict", False):
-                    raise RuntimeError(f"UnicodeDecodeError")
+                if self.cfg.strict:
+                    raise RuntimeError("Failed to read api_key_file")
                 return None
         return None
 
     def _save_api_key(self, key: str) -> bool:
+        key = (key or "").strip()
+        if not key:
+            if self.cfg.strict:
+                raise RuntimeError("Empty api key")
+            return False
+
         self.cfg.api_key = key
         try:
             with open(self.cfg.api_key_file, "w", encoding="utf-8") as f:
@@ -52,124 +96,102 @@ class UserbotAuth:
         return True
 
     def _sign(self, ts: str, user_id: int, nonce: str) -> str:
-        message = f"{ts}.{user_id}.{nonce}".encode("utf-8")
-        signature = hmac.new(
-            self.cfg.secret.encode("utf-8"),
-            message,
-            hashlib.sha256
-        ).hexdigest()
+        msg = f"{ts}.{user_id}.{nonce}".encode("utf-8")
+        return hmac.new(self.cfg.secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()
 
-        return signature
-
-    def _headers(self, user_id: int) -> Dict[str, str]:
-        timestamp = str(int(time.time() * 1000))
+    def _hmac_headers(self, user_id: int) -> Dict[str, str]:
+        ts = str(int(time.time() * 1000))
         nonce = secrets.token_hex(8)
-        signature = self._sign(timestamp, user_id, nonce)
-        headers = {
-            "X-UBT-TS": timestamp,
+        sign = self._sign(ts, user_id, nonce)
+        return {
+            "X-UBT-TS": ts,
             "X-UBT-NONCE": nonce,
-            "X-UBT-SIGN": signature,
+            "X-UBT-SIGN": sign,
         }
-        api_key = self._load_api_key()
-        if api_key:
-            headers["X-UBT-API-KEY"] = api_key
 
+    def _auth_headers(self, user_id: int, include_api_key: bool = True) -> Dict[str, str]:
+        headers = self._hmac_headers(user_id)
+        if include_api_key:
+            api_key = self._load_api_key()
+            if api_key:
+                headers["X-UBT-API-KEY"] = api_key
         return headers
 
-    async def _post(self, path: str, json: Dict[str, Any],
-                   headers: Dict[str, str] | None = None) -> tuple[int, Any]:
+    async def _request_json(
+        self,
+        method: str,
+        path: str,
+        *,
+        json_body: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        params: Optional[Dict[str, str]] = None,
+    ) -> Tuple[int, JSONType]:
         url = f"{self.cfg.url}{path}"
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, json=json, headers=headers) as response:
-                data = await response.json(content_type=None)
-                return response.status, data
+        session = await self._get_session()
 
-    async def _get(self, path: str, json: Dict[str, Any],
-                  headers: Dict[str, str] | None = None) -> tuple[int, Any]:
-        url = f"{self.cfg.url}{path}"
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, json=json, headers=headers) as response:
-                data = await response.json(content_type=None)
-                return response.status, data
+        try:
+            async with session.request(method, url, json=json_body, headers=headers, params=params) as resp:
+                status = resp.status
+                try:
+                    data = await resp.json(content_type=None)
+                    return status, data
+                except Exception:
+                    text = await resp.text(errors="ignore")
+                    return status, {"ok": False, "error": "NON_JSON_RESPONSE", "raw": text[:2000]}
+        except Exception as e:
+            return 0, {"ok": False, "error": "NETWORK_ERROR", "detail": str(e)}
+
+    async def provision(self, user_id: int) -> Dict[str, Any]:
+        if not self.cfg.token:
+            return {"ok": False, "error": "MISSING_PROVISION_TOKEN"}
+
+        status, data = await self._request_json(
+            "POST",
+            "/api/v1/create/provision/issue-key",
+            json_body={"user_id": user_id},
+            headers={"X-UBT-PROVISION": self.cfg.token},
+        )
+
+        if status != 200 or not isinstance(data, dict) or not data.get("ok"):
+            if self.cfg.strict:
+                raise RuntimeError(f"UBT provision failed: {status} {data}")
+            return {"ok": False, "http": status, "data": data}
+
+        api_key = (data.get("api_key") or "").strip()
+        if not api_key:
+            if self.cfg.strict:
+                raise RuntimeError("UBT provision response missing api_key")
+            return {"ok": False, "http": status, "data": data, "error": "MISSING_API_KEY"}
+
+        self._save_api_key(api_key)
+        return {"ok": True, "http": status, "api_key_saved": True}
 
     async def now_install(self, user_id: int) -> Dict[str, Any]:
         existing_key = self._load_api_key()
         if existing_key:
-            return {"ok": True, "installed": True, "api_key": "present"}
+            return {"ok": True, "installed": True, "reason": "API_KEY_PRESENT"}
 
         if not self.cfg.token:
-            return {"ok": False, "installed": False, "reason": "missing_provision_token"}
+            return {"ok": False, "installed": False, "reason": "MISSING_PROVISION_TOKEN"}
 
         result = await self.provision(user_id)
+
+        if not result.get("ok"):
+            return {"ok": False, "installed": False, "reason": "PROVISION_FAILED", "provision": result}
+
         return {"ok": True, "installed": True, "provision": result}
 
-    async def provision(self, user_id: int) -> Dict[str, Any]:
-        status, data = await self._post(
-            "/api/v1/create/provision/issue-key",
-            json={"user_id": user_id},
-            headers={"X-UBT-PROVISION": self.cfg.token}
-        )
+    async def check(self, user_id: int, payload: Dict[str, Any]) -> Dict[str, Any]:
+        body = {**payload, "user_id": user_id}
+        headers = self._auth_headers(user_id, include_api_key=True)
 
-        if status != 200 or not data or not data.get("ok"):
-            if self.cfg.strict:
-                raise RuntimeError(f"UBT provision failed: {status} {data}")
-            return {"ok": False, "status": status, "data": data}
-
-        api_key = data.get("api_key")
-        if not api_key:
-            raise RuntimeError("UBT provision response missing api_key")
-
-        self._save_api_key(api_key)
-        return {"ok": True, "api_key_saved": True}
-
-    async def check(self, user_id, payload: dict) -> Dict[str, Any]:
-        headers = self._headers(user_id)
-        body = {
-            **payload,
-            "user_id": user_id
-        }
-        status, data = await self._post(
+        status, data = await self._request_json(
+            "POST",
             "/api/v1/create/check-update",
-            json=body,
-            headers=headers
+            json_body=body,
+            headers=headers,
         )
         return {"http": status, "data": data}
-
-    async def health(self, user_id: int) -> Dict[str, Any]:
-        status, data = await self._get("/api/v1/create/health-ubt", json={})
-        return {"http": status, "data": data}
-
-    async def runtime_post(self, api: str, user_id: int, payload: dict) -> Dict[str, Any]:
-        api_key = self._load_api_key()
-        if not api_key:
-            raise RuntimeError("NO_CREATE_FILE_API_KEY")
-
-        headers = {
-            "X-UBT-USER-ID": str(user_id),
-            "X-UBT-API-KEY": str(api_key),
-            "Content-Type": "application/json",
-        }
-
-        try:
-            status, data = await self._post(
-                f"/api/v1/{api}",
-                json=payload,
-                headers=headers,
-            )
-        except Exception as error:
-            return {
-                "http": 0,
-                "error": "NETWORK_ERROR",
-                "detail": str(error),
-            }
-
-        if status == 403 and data.get("status") == "DISCONNECTED":
-            raise RuntimeError("USERBOT_DISCONNECTED_BY_SERVER")
-
-        return {
-            "http": status,
-            "data": data,
-        }
 
     async def log_update(
         self,
@@ -178,21 +200,50 @@ class UserbotAuth:
         phone_number: str | None = None,
         system: str | None = None,
         version: str | None = None,
-        **meta: Any
+        **meta: Any,
     ) -> Dict[str, Any]:
-        headers = self._headers(user_id)
-
+        headers = self._auth_headers(user_id, include_api_key=True)
         payload = {
             "user_id": user_id,
             "first_name": first_name,
             "phone_number": phone_number,
             "system": system,
             "version": version,
-            **meta
+            **meta,
         }
-        status, data = await self._post(
+
+        status, data = await self._request_json(
+            "POST",
             "/api/v1/create/log-update",
-            json=payload,
-            headers=headers
+            json_body=payload,
+            headers=headers,
         )
+        return {"http": status, "data": data}
+
+    async def health(self) -> Dict[str, Any]:
+        status, data = await self._request_json("GET", "/api/v1/create/health-ubt")
+        return {"http": status, "data": data}
+
+    async def runtime_post(self, api: str, user_id: int, payload: Dict[str, Any]) -> Dict[str, Any]:
+        api_key = self._load_api_key()
+        if not api_key:
+            raise RuntimeError("NO_CREATE_FILE_API_KEY")
+
+        headers = {
+            **self._hmac_headers(user_id),
+            "X-UBT-USER-ID": str(user_id),
+            "X-UBT-API-KEY": str(api_key),
+            "Content-Type": "application/json",
+        }
+
+        status, data = await self._request_json(
+            "POST",
+            f"/api/v1/{api}",
+            json_body=payload,
+            headers=headers,
+        )
+
+        if status == 403 and isinstance(data, dict) and data.get("status") == "DISCONNECTED":
+            raise RuntimeError("USERBOT_DISCONNECTED_BY_SERVER")
+
         return {"http": status, "data": data}
