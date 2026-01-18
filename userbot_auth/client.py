@@ -124,9 +124,13 @@ class UserbotAuth:
 
     async def check(self, user_id, payload: dict) -> Dict[str, Any]:
         headers = self._headers(user_id)
+        body = {
+            **payload,
+            "user_id": user_id
+        }
         status, data = await self._post(
             "/api/v1/create/check-update",
-            json=payload,
+            json=body,
             headers=headers
         )
         return {"http": status, "data": data}
