@@ -43,16 +43,16 @@ class UserbotAuth:
             v = open(self.cfg.api_key_file, "r", encoding="utf-8").read().strip()
             return v or None
         return None
-        
+
     def _save_api_key(self, key: str) -> None:
         self.cfg.api_key = key
         with open(self.cfg.api_key_file, "w", encoding="utf-8") as f:
             f.write(key)
-            
+
     def _sign(self, ts: str, user_id: int, nonce: str) -> str:
         msg = f"{ts}.{user_id}.{nonce}".encode("utf-8")
         return hmac.new(self.cfg.secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()
-        
+
     def _headers(self, user_id: int) -> Dict[str, str]:
         ts = str(int(time.time()))
         nonce = secrets.token_hex(8)
@@ -66,7 +66,7 @@ class UserbotAuth:
         if k:
             h["X-UBT-API-KEY"] = k
         return h
-        
+
     async def _post(self, path: str, json: Dict[str, Any], headers: Dict[str, str] | None = None):
         url = f"{self.cfg.url}{path}"
         async with aiohttp.ClientSession() as s:
@@ -80,7 +80,7 @@ class UserbotAuth:
             async with s.get(url, json=json, headers=headers) as r:
                 data = await r.json(content_type=None)
                 return r.status, data
-                
+
     async def now_install(self, user_id: int) -> Dict[str, Any]:
         existing = self._load_api_key()
         if existing:
@@ -106,16 +106,16 @@ class UserbotAuth:
             raise RuntimeError("UBT provision response missing api_key")
         self._save_api_key(api_key)
         return {"ok": True, "api_key_saved": True}
-        
+
     async def check(self, user_id: int) -> Dict[str, Any]:
         headers = self._headers(user_id)
         status, data = await self._post("/api/v1/create/check-update", json={"user_id": user_id}, headers=headers)
         return {"http": status, "data": data}
-        
+
     async def health(self, user_id: int) -> Dict[str, Any]:
         status, data = await self._get("/api/v1/create/health-ubt")
         return {"http": status, "data": data}
-        
+
     async def runtime_post(self, api: str, user_id: int, payload: dict):
         api_key = self._load_api_key()
         if not api_key:
@@ -144,7 +144,7 @@ class UserbotAuth:
                 "error": "NETWORK_ERROR",
                 "detail": str(e),
             }
-            
+
     async def log_update(
         self,
         user_id: int,
