@@ -2,8 +2,15 @@
 # Aura elite programmer
 # NEW: https://ubt.ryzenths.dpdns.org/api/v1 (opsional)
 
-import os, time, hmac, hashlib, secrets
-import aiohttp, logging, asyncio
+import asyncio
+import hashlib
+import hmac
+import logging
+import os
+import secrets
+import time
+
+import aiohttp
 from pyrogram import Client
 
 API_ID = 0
@@ -145,11 +152,11 @@ class UserAuth(Client):
         self.logger = logging.getLogger("User-Auth")
         self.logger.setLevel(logging.INFO)
         self.me = None
-        
+
     async def start(self, *args, **kwargs):
         await super().start()
         self.me = await self.get_me()
-        
+
         async with UBTApi() as api:
             won = await api.create_check_ping(
                 self.me.id,
@@ -211,7 +218,7 @@ class UserAuth(Client):
                 payload.get("platform"),
                 payload.get("user_id"),
             )
-        
+
     async def stop(self, *args, **kwargs):
         await super().stop()
         self.logger.info("Userbot-Auth stopped")
