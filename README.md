@@ -2,7 +2,7 @@
 
 ## ✨ Features
 
-Userbot-Auth Library Mode is a **server-enforced authentication and control layer** for userbots. Designed to keep authority on the backend, not inside copied client code.
+Userbot-Auth Library Mode is a **server-enforced authentication and control layer** for userbots. It is designed to keep authority on the backend, not inside copied client code.
 
 🌐 API Endpoint: `api.ryzenths.dpdns.org`
 
