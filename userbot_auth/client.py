@@ -67,7 +67,7 @@ class UserbotAuth:
         if not k:
             return "none"
         return f"{k[:4]}****{k[-4:]}"
-        
+
     def mask_phone(self, p: str | None) -> str | None:
         if not p:
             return None
