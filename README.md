@@ -38,8 +38,6 @@ Copied source code cannot bypass server validation or rate limits.
 ### 📚 **Library-First Architecture**
 Designed to integrate cleanly into existing userbot frameworks or backend services without lifecycle coupling.
 
----
-
 ## 🔑 Authentication and Identity
 
 - **Server-issued runtime keys** (`ubt_live_*`, optional `ubt_test_*`)
@@ -67,8 +65,6 @@ Designed to integrate cleanly into existing userbot frameworks or backend servic
 - **Audit identifiers (`issued_id`)**
   Every issued key can be traced and reviewed through an audit-friendly identifier.
 
----
-
 ## ⚡ Runtime Enforcement
 
 - **Connected-user verification**
@@ -79,8 +75,6 @@ Designed to integrate cleanly into existing userbot frameworks or backend servic
 
 - **Automatic disconnect on invalid credentials**
   Invalid keys or mismatched identity triggers server-side disconnect logic.
-
----
 
 ## 📈 Plan System and Rate Limiting
 
@@ -96,8 +90,6 @@ Designed to integrate cleanly into existing userbot frameworks or backend servic
 - **Consistent 429 responses with reset metadata**
   The API can return retry timing information for clean client backoff behavior.
 
----
-
 ## 🔐 Security Hardening
 
 - **Timestamp freshness validation**
@@ -112,8 +104,6 @@ Designed to integrate cleanly into existing userbot frameworks or backend servic
 - **Timing-safe comparisons**
   Protects secret comparisons from timing-based attacks.
 
----
-
 ## Operational Visibility
 
 - **Deployment and runtime telemetry**
@@ -125,17 +115,9 @@ Designed to integrate cleanly into existing userbot frameworks or backend servic
 - **Central enforcement policies**
   Your backend defines enforcement rules, and the library ensures they are applied consistently.
 
----
-
 ## Intended Use
 
 - 🔒 Private userbot frameworks
 - 💼 Commercial or restricted deployments
 - 🛡️ Projects requiring deploy control and anti-reuse enforcement
 - 👨‍💻 Developers who need server authority and auditability
-
----
-
-> ⚡ **Built with security, control, and scalability in mind.**
-> 🔗 **GitHub:** [TeamKillerX/Userbot-Auth](https://github.com/TeamKillerX/Userbot-Auth)
-> 📦 **PyPI:** `pip install userbot-auth`
