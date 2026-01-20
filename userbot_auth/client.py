@@ -63,6 +63,19 @@ class UserbotAuth:
         self._session = aiohttp.ClientSession(timeout=timeout)
         return self._session
 
+    def mask_key(self, k: str) -> str:
+        if not k:
+            return "none"
+        return f"{k[:4]}****{k[-4:]}"
+
+    def mask_phone(self, p: str | None) -> str | None:
+        if not p:
+            return None
+        p = str(p)
+        if len(p) <= 6:
+            return "*" * len(p)
+        return f"{p[:3]}***{p[-3:]}"
+
     def _load_api_key(self) -> Optional[str]:
         if self.cfg.api_key:
             return self.cfg.api_key
