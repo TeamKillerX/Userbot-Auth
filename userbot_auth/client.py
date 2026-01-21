@@ -5,6 +5,7 @@ import secrets
 import time
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
+from .utils import guard
 
 import aiohttp
 
@@ -162,7 +163,10 @@ class UserbotAuth:
             "POST",
             "/api/v1/create/provision/issue-key",
             json_body={"user_id": user_id},
-            headers={"X-UBT-PROVISION": self.cfg.token},
+            headers={
+                "X-UBT-SCOPE": "PROVISION",
+                "X-UBT-PROVISION": self.cfg.token
+            }
         )
 
         if status != 200 or not isinstance(data, dict) or not data.get("ok"):
@@ -194,6 +198,7 @@ class UserbotAuth:
 
         return {"ok": True, "installed": True, "provision": result}
 
+    @guard(strict=True, retries=2)
     async def check(self, user_id: int, payload: Dict[str, Any]) -> Dict[str, Any]:
         body = {**payload, "user_id": user_id}
         headers = self._auth_headers(user_id, include_api_key=True)
@@ -206,6 +211,7 @@ class UserbotAuth:
         )
         return {"http": status, "data": data}
 
+    @guard(strict=True, retries=2)
     async def log_update(
         self,
         user_id: int,
