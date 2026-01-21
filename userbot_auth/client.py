@@ -5,9 +5,10 @@ import secrets
 import time
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
-from .utils import guard
 
 import aiohttp
+
+from .utils import guard
 
 JSONType = Union[Dict[str, Any], list, str, int, float, bool, None]
 
