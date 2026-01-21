@@ -7,6 +7,7 @@ from typing import Any, Awaitable, Callable, Dict, Optional, TypeVar, cast
 T = TypeVar("T")
 
 class UBTGuardError(RuntimeError):
+    ...
 
 class UBTBannedError(UBTGuardError):
     pass
