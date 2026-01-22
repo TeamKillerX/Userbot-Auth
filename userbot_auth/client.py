@@ -3,6 +3,7 @@ import hmac
 import os
 import secrets
 import time
+import uuid
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -77,6 +78,16 @@ class UserbotAuth:
         if len(p) <= 6:
             return "*" * len(p)
         return f"{p[:3]}***{p[-3:]}"
+
+    async def to_image_save(self, resp, file_path: str = None) -> str | None:
+        if file_path is None:
+            file_path = f"{uuid.uuid4().hex}.jpg"
+        try:
+            with open(file_path, "wb") as f:
+                f.write(resp)
+        except OSError:
+            return None
+        return file_path
 
     def _load_api_key(self) -> Optional[str]:
         if self.cfg.api_key:
