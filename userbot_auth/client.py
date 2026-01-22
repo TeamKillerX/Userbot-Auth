@@ -86,6 +86,11 @@ class UserbotAuth:
             with open(file_path, "wb") as f:
                 f.write(resp)
         except OSError:
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            except OSError:
+                pass
             return None
         return file_path
 
