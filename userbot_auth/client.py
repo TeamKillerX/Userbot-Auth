@@ -79,7 +79,7 @@ class UserbotAuth:
             return "*" * len(p)
         return f"{p[:3]}***{p[-3:]}"
 
-    async def to_image_save(self, resp, file_path: str = None) -> str | None:
+    async def to_image_save(self, resp, file_path: str = None):
         if file_path is None:
             file_path = f"{uuid.uuid4().hex}.jpg"
         try:
