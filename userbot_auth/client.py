@@ -268,6 +268,23 @@ class UserbotAuth:
         status, data = await self._request_json("GET", "/api/v1/create/health-ubt")
         return {"http": status, "data": data}
 
+    async def chat_completions(payload, provider: str = "ryzenth"):
+        api_key = self._load_api_key()
+        if not api_key:
+            raise RuntimeError("NO_CREATE_FILE_API_KEY")
+
+        payload["provider"] = provider
+        headers = self._all_headers(api_key, user_id)
+        status, data = await self._request_json(
+            "POST",
+            f"/api/v1/chat/completions",
+            json_body=payload,
+            headers=headers,
+        )
+        if status == 403 and isinstance(data, dict) and data.get("status") == "DISCONNECTED":
+            raise RuntimeError("USERBOT_DISCONNECTED_BY_SERVER")
+        return data
+
     async def runtime_post(self, api: str, user_id: int, payload: Dict[str, Any]) -> Dict[str, Any]:
         api_key = self._load_api_key()
         if not api_key:
