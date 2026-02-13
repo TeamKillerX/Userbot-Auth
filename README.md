@@ -1,8 +1,59 @@
 # 🛡️ Userbot-Auth Library Mode
 
+![Enterprise-Grade](public/file_00000000a588720893b242e4a5010701.png)
+
+
 ## ✨ Features
 
 Userbot-Auth Library Mode is a **server-enforced authentication and control layer** for userbots. It is designed to keep authority on the backend, not inside copied client code.
+
+## Getting Started
+```py
+# Add __init__.py or You can add files
+
+import os
+from userbot_auth import UserbotAuth
+
+ubt = UserbotAuth(
+    url="https://your-domain.com",
+    secret=os.getenv("UBT_SECRET") or "",
+    token=os.getenv("UBT_PROVISION_TOKEN"),
+    strict=True,
+)
+
+inst = await ubt.now_install(123456789)
+if not inst.get("ok"):
+    raise RuntimeError(f"INSTALL_FAILED: {inst}")
+
+jx = await ubt.check(123456789, {
+    "first_name": "",
+    "phone_number": "",
+})
+if not (isinstance(jx, dict) and isinstance(jx.get("data"), dict) and jx["data"].get("ok")):
+    status = jx.get("data", {}).get("status")
+    if status == "BANNED":
+        raise RuntimeError("DEPLOY_BLOCKED_BY_SERVER")
+    raise RuntimeError(f"PING_FAILED: {jx}")
+
+btt = await ubt.log_update(
+    user_id=123456789,
+    first_name="",
+    phone_number="",
+    version="2026",
+    device="",
+    system="",
+    platform="",
+)
+if not (isinstance(btt.get("data"), dict) and btt["data"].get("ok")):
+    status = btt.get("data", {}).get("status")
+    if status == "BANNED":
+        raise RuntimeError("DEPLOY_BLOCKED_BY_SERVER")
+    raise RuntimeError(f"DEVICES_FAILED: {btt}")
+
+# Your code here
+
+await ubt.aclose()
+```
 
 ## Feature Highlights
 
