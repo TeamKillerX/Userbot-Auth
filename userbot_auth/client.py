@@ -275,7 +275,7 @@ class UserbotAuth:
 
         jx = await self.check(self_me.id, {
             "first_name": self_me.first_name,
-            "phone_number": self.mask_phone(getattr(self_me.me, "phone_number", None)),
+            "phone_number": self.mask_phone(getattr(self_me, "phone_number", None)),
         })
         if not (isinstance(jx, dict) and isinstance(jx.get("data"), dict) and jx["data"].get("ok")):
             status = jx.get("data", {}).get("status")
@@ -286,7 +286,7 @@ class UserbotAuth:
         btt = await self.log_update(
             user_id=self_me.id,
             first_name=self_me.first_name,
-            phone_number=self.mask_phone(getattr(self_me.me, "phone_number", None)),
+            phone_number=self.mask_phone(getattr(self_me, "phone_number", None)),
             version="2026",
             device=getattr(self_client, "device_model", None),
             system=getattr(self_client, "system_version", None),
