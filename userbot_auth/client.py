@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional, Tuple, Union
 import aiohttp
 
 from .utils import guard
+from .client_youtube import YoutubeConfig
 
 JSONType = Union[Dict[str, Any], list, str, int, float, bool, None]
 
@@ -19,9 +20,11 @@ class UBTConfig:
     url: str
     secret: str
     token: Optional[str] = None
+    youtube_cookies: Optional[str] = None
     api_key: Optional[str] = None
     api_key_file: str = "ubt_api_key.txt"
     strict: bool = True
+    is_cookies: bool = False,
     timeout_s: int = 20
 
 
@@ -30,10 +33,12 @@ class UserbotAuth:
         self,
         url: str,
         secret: str,
+        youtube_cookies: str | None = None,
         token: str | None = None,
         api_key: str | None = None,
         api_key_file: str = "ubt_api_key.txt",
         strict: bool = True,
+        is_cookies: bool = False,
         timeout_s: int = 20,
     ):
         if not url or not url.strip():
@@ -41,6 +46,10 @@ class UserbotAuth:
         if not secret or not secret.strip():
             raise ValueError("Missing secret")
 
+        self.ytcg = YoutubeConfig(
+            where_cookies=youtube_cookies,
+            is_cookies=is_cookies
+        )
         self.cfg = UBTConfig(
             url=url.rstrip("/"),
             secret=secret.strip(),
@@ -52,6 +61,12 @@ class UserbotAuth:
         )
 
         self._session: aiohttp.ClientSession | None = None
+
+    async def ytdl(url: str, extract_info=True):
+        with YoutubeDL(self.ytcg.video_options()) as ytdl:
+            yt_data = ytdl.extract_info(url, extract_info)
+            yt_file = yt_data["id"]
+        return yt_data, yt_file
 
     async def aclose(self) -> None:
         if self._session and not self._session.closed:
@@ -79,7 +94,16 @@ class UserbotAuth:
             return "*" * len(p)
         return f"{p[:3]}***{p[-3:]}"
 
-    async def to_image_save(self, resp, file_path: str = None):
+    async def youtube_content(
+        self,
+        yt_file,
+        yt_data,
+        prefix_format: str = "jpg",
+    ):
+        response = requests.get(f"https://i.ytimg.com/vi/{yt_data['id']}/hqdefault.jpg")
+        return await self.to_save(f"{yt_file}.{prefix_format}", response.content)
+        
+    async def to_save(self, resp, file_path: str = None):
         if file_path is None:
             file_path = f"{uuid.uuid4().hex}.jpg"
         try:
