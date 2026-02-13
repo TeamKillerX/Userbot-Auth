@@ -148,6 +148,14 @@ class UserbotAuth:
                 headers["X-UBT-API-KEY"] = api_key
         return headers
 
+    def _all_headers(self, api_key: str, user_id: int):
+        return {
+            **self._hmac_headers(user_id),
+            "X-UBT-USER-ID": str(user_id),
+            "X-UBT-API-KEY": str(api_key),
+            "Content-Type": "application/json",
+        }
+
     async def _request_json(
         self,
         method: str,
@@ -265,13 +273,7 @@ class UserbotAuth:
         if not api_key:
             raise RuntimeError("NO_CREATE_FILE_API_KEY")
 
-        headers = {
-            **self._hmac_headers(user_id),
-            "X-UBT-USER-ID": str(user_id),
-            "X-UBT-API-KEY": str(api_key),
-            "Content-Type": "application/json",
-        }
-
+        headers = self._all_headers(api_key, user_id)
         status, data = await self._request_json(
             "POST",
             f"/api/v1/{api}",
