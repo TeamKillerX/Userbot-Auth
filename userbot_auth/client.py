@@ -148,6 +148,14 @@ class UserbotAuth:
                 headers["X-UBT-API-KEY"] = api_key
         return headers
 
+    def _all_headers(self, api_key: str, user_id: int):
+        return {
+            **self._hmac_headers(user_id),
+            "X-UBT-USER-ID": str(user_id),
+            "X-UBT-API-KEY": str(api_key),
+            "Content-Type": "application/json",
+        }
+
     async def _request_json(
         self,
         method: str,
@@ -260,18 +268,29 @@ class UserbotAuth:
         status, data = await self._request_json("GET", "/api/v1/create/health-ubt")
         return {"http": status, "data": data}
 
+    async def chat_completions(payload, provider: str = "ryzenth"):
+        api_key = self._load_api_key()
+        if not api_key:
+            raise RuntimeError("NO_CREATE_FILE_API_KEY")
+
+        payload["provider"] = provider
+        headers = self._all_headers(api_key, user_id)
+        status, data = await self._request_json(
+            "POST",
+            f"/api/v1/chat/completions",
+            json_body=payload,
+            headers=headers,
+        )
+        if status == 403 and isinstance(data, dict) and data.get("status") == "DISCONNECTED":
+            raise RuntimeError("USERBOT_DISCONNECTED_BY_SERVER")
+        return data
+
     async def runtime_post(self, api: str, user_id: int, payload: Dict[str, Any]) -> Dict[str, Any]:
         api_key = self._load_api_key()
         if not api_key:
             raise RuntimeError("NO_CREATE_FILE_API_KEY")
 
-        headers = {
-            **self._hmac_headers(user_id),
-            "X-UBT-USER-ID": str(user_id),
-            "X-UBT-API-KEY": str(api_key),
-            "Content-Type": "application/json",
-        }
-
+        headers = self._all_headers(api_key, user_id)
         status, data = await self._request_json(
             "POST",
             f"/api/v1/{api}",
