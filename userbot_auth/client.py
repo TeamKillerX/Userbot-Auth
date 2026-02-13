@@ -9,8 +9,8 @@ from typing import Any, Dict, Optional, Tuple, Union
 
 import aiohttp
 
-from .utils import guard
 from .client_youtube import YoutubeConfig
+from .utils import guard
 
 JSONType = Union[Dict[str, Any], list, str, int, float, bool, None]
 
@@ -103,7 +103,7 @@ class UserbotAuth:
     ):
         response = requests.get(f"https://i.ytimg.com/vi/{yt_data['id']}/hqdefault.jpg")
         return await self.to_save(f"{yt_file}.{prefix_format}", response.content)
-        
+
     async def to_save(self, resp, file_path: str = None):
         if file_path is None:
             file_path = f"{uuid.uuid4().hex}.jpg"
