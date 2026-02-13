@@ -9,7 +9,7 @@ Userbot-Auth Library Mode is a **server-enforced authentication and control laye
 
 ## Getting Started
 ```py
-# Add __init__.py or You can add files
+# Add an __init__.py, or add additional files as needed
 
 import os
 from userbot_auth import UserbotAuth
