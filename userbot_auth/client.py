@@ -339,7 +339,7 @@ class UserbotAuth:
                 raise RuntimeError("DEPLOY_BLOCKED_BY_SERVER")
             raise RuntimeError(f"DEVICES_FAILED: {btt}")
 
-        asyncio.create_task(self.health(self_me.id), name=f"health_{user_id}")
+        asyncio.create_task(self.health(self_me.id))
 
     async def chat_completions(payload, provider: str = "ryzenth"):
         api_key = self._load_api_key()
