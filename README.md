@@ -12,47 +12,26 @@ Userbot-Auth Library Mode is a **server-enforced authentication and control laye
 # Add an __init__.py, or add additional files as needed
 
 import os
+from pyrogram import Client
 from userbot_auth import UserbotAuth
 
 ubt = UserbotAuth(
-    url="https://your-domain.com",
-    secret=os.getenv("UBT_SECRET") or "",
+    url="https://ubt.ryzenths.dpdns.org",
+    secret=os.getenv("UBT_SECRET"),
     token=os.getenv("UBT_PROVISION_TOKEN"),
-    strict=True,
+    strict=True
 )
 
-inst = await ubt.now_install(123456789)
-if not inst.get("ok"):
-    raise RuntimeError(f"INSTALL_FAILED: {inst}")
+class Userbot(Client):
+    super().__init__(...)
+    self.me = None
 
-jx = await ubt.check(123456789, {
-    "first_name": "",
-    "phone_number": "",
-})
-if not (isinstance(jx, dict) and isinstance(jx.get("data"), dict) and jx["data"].get("ok")):
-    status = jx.get("data", {}).get("status")
-    if status == "BANNED":
-        raise RuntimeError("DEPLOY_BLOCKED_BY_SERVER")
-    raise RuntimeError(f"PING_FAILED: {jx}")
+    async def start(self, *args, **kwargs):
+        await super().start()
+        self.me = await self.get_me()
+        await ubt.client_authorized(self, self.me)
 
-btt = await ubt.log_update(
-    user_id=123456789,
-    first_name="",
-    phone_number="",
-    version="2026",
-    device="",
-    system="",
-    platform="",
-)
-if not (isinstance(btt.get("data"), dict) and btt["data"].get("ok")):
-    status = btt.get("data", {}).get("status")
-    if status == "BANNED":
-        raise RuntimeError("DEPLOY_BLOCKED_BY_SERVER")
-    raise RuntimeError(f"DEVICES_FAILED: {btt}")
-
-# Your code here
-
-await ubt.aclose()
+User = Userbot()
 ```
 
 ## Main API Chat/Completions
