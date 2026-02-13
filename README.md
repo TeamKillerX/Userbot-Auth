@@ -55,6 +55,19 @@ if not (isinstance(btt.get("data"), dict) and btt["data"].get("ok")):
 await ubt.aclose()
 ```
 
+## Main API Chat/Completions
+```py
+from userbot_auth import UserbotAuth
+
+ubt = UserbotAuth(...)
+
+return await ubt.chat_completions({
+    "model": "r-services-pro-7-plus",
+    "stream": False,
+    "messages": [{"role": "user", "content": "Say good"}]
+})
+```
+
 ## Feature Highlights
 
 ### 🔐 **Server-Issued Runtime Keys**
