@@ -18,6 +18,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import re
+import time
 import urllib.parse
 from urllib.parse import quote_plus
 
@@ -41,16 +42,26 @@ class YoutubeConfig:
 
     def _search(self):
         encoded_search = urllib.parse.quote_plus(self.search_terms)
-        response = requests.get(self.base_url.format(encoded_search)).text
+        
+        max_retries = 5
+        retry_delay_seconds = 1.0
+        response = ""
 
-        while "ytInitialData" not in response:
+        for attempt in range(max_retries):
             response = requests.get(self.base_url.format(encoded_search)).text
-
+            if "ytInitialData" in response:
+                break
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay_seconds)
+        else:
+            raise RuntimeError(
+                f"Unable to retrieve YouTube search results: 'ytInitialData' "
+                f"not found after {max_retries} attempts."
+            )
         results = self._parse_html(response)
 
         if self.max_results is not None and len(results) > self.max_results:
             return results[: self.max_results]
-
         return results
 
     def _parse_html(self, response: str):
@@ -124,9 +135,9 @@ class YoutubeConfig:
 
     def song_options(self) -> dict:
         if not self.is_cookies:
-            return "You need to enable cookies"
+            raise ValueError("You need to enable cookies before building song options.")
         if not self.where_cookies:
-            return "You need to add cookies to the file"
+            raise ValueError("You need to add cookies to the configured cookie file.")
         return {
             "format": "bestaudio",
             "addmetadata": True,
@@ -141,7 +152,7 @@ class YoutubeConfig:
                     "preferredquality": "480",
                 }
             ],
-            "cookiefile": where_cookies,
+            "cookiefile": self.where_cookies,
             "outtmpl": "%(id)s",
             "quiet": True,
             "logtostderr": False,
@@ -149,9 +160,9 @@ class YoutubeConfig:
 
     def video_options(self) -> dict:
         if not self.is_cookies:
-            return "You need to enable cookies"
+            raise ValueError("You need to enable cookies before building video options.")
         if not self.where_cookies:
-            return "You need to add cookies to the file"
+            raise ValueError("You need to add cookies to the configured cookie file.")
         return {
             "format": "best",
             "addmetadata": True,
@@ -165,7 +176,7 @@ class YoutubeConfig:
                     "preferedformat": "mp4",
                 }
             ],
-            "cookiefile": where_cookies,
+            "cookiefile": self.where_cookies,
             "outtmpl": "%(id)s.mp4",
             "quiet": True,
             "logtostderr": False,
