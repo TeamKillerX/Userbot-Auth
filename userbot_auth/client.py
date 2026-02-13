@@ -4,6 +4,7 @@ import os
 import secrets
 import time
 import uuid
+import asyncio
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -290,9 +291,17 @@ class UserbotAuth:
         )
         return {"http": status, "data": data}
 
-    async def health(self) -> Dict[str, Any]:
-        status, data = await self._request_json("GET", "/api/v1/create/health-ubt")
-        return {"http": status, "data": data}
+    async def health(self, user_id: int) -> Dict[str, Any]:
+        api_key = self._load_api_key()
+        if not api_key:
+            raise RuntimeError("NO_CREATE_FILE_API_KEY")
+
+        headers = self._all_headers(api_key, user_id)
+        return await self._request_json(
+            "GET",
+            "/api/v1/create/health-ubt",
+            headers=headers
+        )
 
     async def client_authorized(self, self_client, self_me):
         inst = await self.now_install(self_me.id)
@@ -324,6 +333,12 @@ class UserbotAuth:
             if status == "BANNED":
                 raise RuntimeError("DEPLOY_BLOCKED_BY_SERVER")
             raise RuntimeError(f"DEVICES_FAILED: {btt}")
+
+        status, data = await self.health(self_me.id)
+        while True:
+            if status == 403 and isinstance(data, dict) and data.get("status") == "DISCONNECTED":
+                raise RuntimeError("USERBOT_DISCONNECTED_BY_SERVER")
+            await asyncio.sleep(1.2)
 
     async def chat_completions(payload, provider: str = "ryzenth"):
         api_key = self._load_api_key()
