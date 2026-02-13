@@ -33,7 +33,7 @@ class UserbotAuth:
         self,
         url: str,
         secret: str,
-        youtube_cookies: str | None = None,
+        youtube_cookies: str = "cookies.txt",
         token: str | None = None,
         api_key: str | None = None,
         api_key_file: str = "ubt_api_key.txt",
@@ -48,6 +48,7 @@ class UserbotAuth:
 
         self.ytcg = YoutubeConfig(
             where_cookies=youtube_cookies,
+            search_terms="",
             is_cookies=is_cookies
         )
         self.cfg = UBTConfig(
