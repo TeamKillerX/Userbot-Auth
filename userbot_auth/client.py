@@ -297,16 +297,16 @@ class UserbotAuth:
             raise RuntimeError("NO_CREATE_FILE_API_KEY")
 
         headers = self._all_headers(api_key, user_id)
-        status, data = await self._request_json(
-            "GET",
-            "/api/v1/create/health-ubt",
-            headers=headers
-        )
-        while True:
-            if status == 403 and isinstance(data, dict) and data.get("status") == "DISCONNECTED":
+        for _ in range(60):
+            status, data = await self._request_json(
+                "GET",
+                "/api/v1/create/health-ubt",
+                headers=headers
+            )
+            if (status == 403 and isinstance(data, dict) and data.get("status") == "DISCONNECTED"):
                 raise RuntimeError("USERBOT_DISCONNECTED_BY_SERVER")
-                break
-            await asyncio.sleep(1.2)
+            await asyncio.sleep(5)
+        raise RuntimeError("HEALTH_CHECK_TIMEOUT")
 
     async def client_authorized(self, self_client, self_me):
         inst = await self.now_install(self_me.id)
