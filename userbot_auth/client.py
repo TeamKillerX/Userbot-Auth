@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
 
 import aiohttp
+from yt_dlp import YoutubeDL
 
 from .client_youtube import YoutubeConfig
 from .utils import guard
