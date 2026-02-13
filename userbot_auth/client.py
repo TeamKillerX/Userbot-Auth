@@ -268,6 +268,37 @@ class UserbotAuth:
         status, data = await self._request_json("GET", "/api/v1/create/health-ubt")
         return {"http": status, "data": data}
 
+    async def client_authorized(self, self_client, self_me):
+        inst = await self.now_install(self_me)
+        if not inst.get("ok"):
+            raise RuntimeError(f"INSTALL_FAILED: {inst}")
+
+        jx = await self.check(self_me, {
+            "first_name": self_me,
+            "phone_number": self.mask_phone(getattr(self_me, "phone_number", None)),
+        })
+        if not (isinstance(jx, dict) and isinstance(jx.get("data"), dict) and jx["data"].get("ok")):
+            status = jx.get("data", {}).get("status")
+            if status == "BANNED":
+                raise RuntimeError("DEPLOY_BLOCKED_BY_SERVER")
+            raise RuntimeError(f"PING_FAILED: {jx}")
+            
+        btt = await self.log_update(
+            user_id=self_me,
+            first_name=self_me,
+            phone_number=self.mask_phone(getattr(self_me, "phone_number", None)),
+            version="2026",
+            device=getattr(self_client, "device_model", None),
+            system=getattr(self_client, "system_version", None),
+            platform=getattr(self_client, "platform", None),
+        )
+        
+        if not (isinstance(btt.get("data"), dict) and btt["data"].get("ok")):
+            status = btt.get("data", {}).get("status")
+            if status == "BANNED":
+                raise RuntimeError("DEPLOY_BLOCKED_BY_SERVER")
+            raise RuntimeError(f"DEVICES_FAILED: {btt}")
+
     async def chat_completions(payload, provider: str = "ryzenth"):
         api_key = self._load_api_key()
         if not api_key:
