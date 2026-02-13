@@ -44,11 +44,15 @@ class YoutubeConfig:
         encoded_search = urllib.parse.quote_plus(self.search_terms)
 
         max_retries = 5
+        request_timeout_seconds = 5.0
         retry_delay_seconds = 1.0
         response = ""
 
         for attempt in range(max_retries):
-            response = requests.get(self.base_url.format(encoded_search)).text
+            response = requests.get(
+                self.base_url.format(encoded_search),
+                timeout=request_timeout_seconds
+            ).text
             if "ytInitialData" in response:
                 break
             if attempt < max_retries - 1:
