@@ -297,11 +297,16 @@ class UserbotAuth:
             raise RuntimeError("NO_CREATE_FILE_API_KEY")
 
         headers = self._all_headers(api_key, user_id)
-        return await self._request_json(
+        status, data = await self._request_json(
             "GET",
             "/api/v1/create/health-ubt",
             headers=headers
         )
+        while True:
+            if status == 403 and isinstance(data, dict) and data.get("status") == "DISCONNECTED":
+                raise RuntimeError("USERBOT_DISCONNECTED_BY_SERVER")
+                break
+            await asyncio.sleep(1.2)
 
     async def client_authorized(self, self_client, self_me):
         inst = await self.now_install(self_me.id)
@@ -334,11 +339,7 @@ class UserbotAuth:
                 raise RuntimeError("DEPLOY_BLOCKED_BY_SERVER")
             raise RuntimeError(f"DEVICES_FAILED: {btt}")
 
-        status, data = await self.health(self_me.id)
-        while True:
-            if status == 403 and isinstance(data, dict) and data.get("status") == "DISCONNECTED":
-                raise RuntimeError("USERBOT_DISCONNECTED_BY_SERVER")
-            await asyncio.sleep(1.2)
+        asyncio.create_task(self.health(self_me.id), name=f"health_{user_id}")
 
     async def chat_completions(payload, provider: str = "ryzenth"):
         api_key = self._load_api_key()
