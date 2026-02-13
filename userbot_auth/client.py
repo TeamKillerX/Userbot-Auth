@@ -282,7 +282,7 @@ class UserbotAuth:
             if status == "BANNED":
                 raise RuntimeError("DEPLOY_BLOCKED_BY_SERVER")
             raise RuntimeError(f"PING_FAILED: {jx}")
-            
+
         btt = await self.log_update(
             user_id=self_me,
             first_name=self_me,
@@ -292,7 +292,7 @@ class UserbotAuth:
             system=getattr(self_client, "system_version", None),
             platform=getattr(self_client, "platform", None),
         )
-        
+
         if not (isinstance(btt.get("data"), dict) and btt["data"].get("ok")):
             status = btt.get("data", {}).get("status")
             if status == "BANNED":
