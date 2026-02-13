@@ -295,7 +295,7 @@ class UserbotAuth:
         api_key = self._load_api_key()
         if not api_key:
             raise RuntimeError("NO_CREATE_FILE_API_KEY")
-            
+
         headers = self._all_headers(api_key, user_id)
         for _ in range(60):
             status, data = await self._request_json(
