@@ -32,7 +32,8 @@ setuptools.setup(
     ],
     install_requires=[
         "requests",
-        "aiohttp"
+        "aiohttp",
+        "yt-dlp"
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
