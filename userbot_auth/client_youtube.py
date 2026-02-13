@@ -42,7 +42,7 @@ class YoutubeConfig:
 
     def _search(self):
         encoded_search = urllib.parse.quote_plus(self.search_terms)
-        
+
         max_retries = 5
         retry_delay_seconds = 1.0
         response = ""

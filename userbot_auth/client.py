@@ -8,9 +8,9 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
 
 import aiohttp
+from yt_dlp import YoutubeDL
 
 from .client_youtube import YoutubeConfig
-from yt_dlp import YoutubeDL
 from .utils import guard
 
 JSONType = Union[Dict[str, Any], list, str, int, float, bool, None]
