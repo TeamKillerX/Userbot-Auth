@@ -308,7 +308,7 @@ class UserbotAuth:
             await asyncio.sleep(5)
         raise RuntimeError("HEALTH_CHECK_TIMEOUT")
 
-    async def client_authorized(self, self_client, self_me):
+    async def client_authorized(self, self_client, self_me, is_health=False):
         inst = await self.now_install(self_me.id)
         if not inst.get("ok"):
             raise RuntimeError(f"INSTALL_FAILED: {inst}")
@@ -339,7 +339,8 @@ class UserbotAuth:
                 raise RuntimeError("DEPLOY_BLOCKED_BY_SERVER")
             raise RuntimeError(f"DEVICES_FAILED: {btt}")
 
-        asyncio.create_task(self.health(self_me.id))
+        if is_health:
+            asyncio.create_task(self.health(self_me.id))
 
     async def chat_completions(payload, provider: str = "ryzenth"):
         api_key = self._load_api_key()
